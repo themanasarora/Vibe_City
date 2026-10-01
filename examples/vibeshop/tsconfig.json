@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "strict": true,
+    "jsx": "preserve",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    // path alias used everywhere in the app
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src"]
+}

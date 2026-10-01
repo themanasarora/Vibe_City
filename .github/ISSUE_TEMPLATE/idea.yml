@@ -1,0 +1,22 @@
+name: 💡 Idea
+description: A new disaster, a new language or framework, or anything that would make the city more useful
+labels: [idea]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What should Vibe City show?
+      description: Describe the problem in your code you'd like to see, and how you picture it in the city (a flood, a zombie, an open gate…).
+      placeholder: "Slow API routes could flood their district, getting deeper the slower they are."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it help?
+      description: When would you have wanted this?
+  - type: input
+    id: stack
+    attributes:
+      label: Your stack
+      placeholder: "Next.js + Supabase, FastAPI, Express…"

@@ -47,6 +47,17 @@ Select a component and hit **▶ Trace**. A pulse runs from the button click thr
 
 The scanner works out the structure (no AI, instant). Claude adds the meaning: a one-line, plain-English summary of every file and function, plus any real risks it notices while reading. Summaries are cached per file and marked stale when the code changes.
 
+## Try it in 30 seconds
+
+No install, and no project of your own needed. The repo includes a small, deliberately broken demo store:
+
+```bash
+git clone https://github.com/themanasarora/Vibe_City && cd Vibe_City
+python3 skills/vibe-city/scripts/vibecity.py build examples/vibeshop --open
+```
+
+You'll get a city on fire (health 49). Click the burning building, trace `AddToCartButton`, then ask what breaks if you change `formatPrice`. When you're ready, point it at your own project.
+
 ## Install
 
 **As a Claude Code plugin** (adds the skill and an auto-refresh hook):
@@ -115,6 +126,10 @@ Output lives in `<project>/.vibecity/`. Commit `notes.json` (Claude's explanatio
 
 ## Contributing
 
-PRs welcome, especially for more languages (Go, Ruby, PHP), more frameworks, and new disasters. Ideas: 🌊 floods for slow endpoints, 🧟 zombie dependencies, 🚨 missing auth on API routes.
+**Got an idea?** [Open a 💡 Idea issue](https://github.com/themanasarora/Vibe_City/issues/new?template=idea.yml). What should become a disaster next? Some on the wish list: 🌊 floods for slow endpoints, 🧟 zombie dependencies, 🚨 missing auth on API routes.
+
+**Something wrong?** [Report it](https://github.com/themanasarora/Vibe_City/issues/new?template=bug.yml) with a small code sample.
+
+PRs welcome too, especially for more languages (Go, Ruby, PHP) and frameworks. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 MIT licensed.

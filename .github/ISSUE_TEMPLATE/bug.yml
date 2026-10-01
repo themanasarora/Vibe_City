@@ -1,0 +1,25 @@
+name: 🐛 Something looks wrong
+description: A missing road, a wrong building, a false fire, or the city won't load
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: A small code sample that shows it
+      description: Even a few lines help a lot. Please remove anything private.
+      render: tsx
+  - type: input
+    id: stack
+    attributes:
+      label: Language / framework
+      placeholder: "Next.js 15 app router, Python 3.12 FastAPI…"
+  - type: input
+    id: browser
+    attributes:
+      label: Browser (if the city won't load)
