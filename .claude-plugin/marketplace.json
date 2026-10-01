@@ -1,0 +1,11 @@
+{
+  "name": "vibe-city",
+  "owner": { "name": "Vibe City contributors" },
+  "plugins": [
+    {
+      "name": "vibe-city",
+      "source": "./",
+      "description": "See your codebase as a living 3D city — buildings, roads, disasters and blast radius."
+    }
+  ]
+}

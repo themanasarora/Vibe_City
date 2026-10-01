@@ -1,0 +1,16 @@
+{
+  "description": "Refresh an existing Vibe City after each Claude Code turn (only for projects that already have a .vibecity/ folder).",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/skills/vibe-city/scripts/vibecity.py\" hook",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

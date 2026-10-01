@@ -1,0 +1,8 @@
+{
+  "name": "vibe-city",
+  "version": "0.1.0",
+  "description": "See your codebase as a living 3D city: files are buildings, functions are floors, data flows are glowing roads, bugs are disasters, and your changes send out shockwaves.",
+  "author": { "name": "Vibe City contributors" },
+  "license": "MIT",
+  "keywords": ["visualization", "3d", "architecture", "vibe-coding", "codebase-map", "impact-analysis"]
+}

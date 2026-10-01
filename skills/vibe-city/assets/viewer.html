@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vibe City</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070b18; --panel: rgba(13, 19, 38, 0.82); --panel-solid: #0d1326; --line: rgba(140, 160, 220, 0.16);
+    --text: #e8ecff; --muted: #8e98bd; --dim: #5d678b; --accent: #7cf2ff; --accent2: #c58bff;
+    --ui: #4cc9f0; --api: #57e389; --data: #ffb347; --logic: #b892ff; --config: #7f8ea3; --test: #ff7eb6;
+    --fire: #ff5a1f; --toxic: #7dff6b; --warn: #ffd166; --storm: #8fd3ff;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    background: radial-gradient(1200px 700px at 50% 18%, #1a1f4a 0%, #0b1029 45%, var(--bg) 100%);
+    color: var(--text); font: 14px/1.45 'Space Grotesk', system-ui, sans-serif;
+  }
+  #scene, #labels { position: fixed; inset: 0; }
+  #labels { pointer-events: none; }
+  button { font: inherit; color: inherit; }
+  .glass { background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+
+  /* header */
+  header { position: fixed; top: 16px; left: 16px; right: 16px; display: flex; gap: 12px; align-items: flex-start; pointer-events: none; z-index: 5; }
+  header > * { pointer-events: auto; }
+  .brand { padding: 12px 16px; display: flex; gap: 12px; align-items: center; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; background: conic-gradient(from 210deg, var(--accent), var(--accent2), #ff7eb6, var(--accent)); display: grid; place-items: center; box-shadow: 0 0 24px rgba(124,242,255,.35); }
+  .logo svg { width: 20px; height: 20px; }
+  .brand h1 { margin: 0; font-size: 15px; letter-spacing: .18em; font-weight: 700; }
+  .brand .sub { color: var(--muted); font-size: 12px; }
+  .brand .sub b { color: var(--text); font-weight: 600; }
+  .spacer { flex: 1; }
+  #impact { padding: 10px 14px; display: none; align-items: center; gap: 12px; max-width: 520px; border-color: rgba(143, 211, 255, .35); }
+  #impact .bolt { font-size: 22px; filter: drop-shadow(0 0 8px var(--storm)); }
+  #impact .t { font-size: 13px; }
+  #impact .t b { color: var(--storm); }
+  #impact .t small { display: block; color: var(--muted); }
+  .btn { background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 10px; padding: 7px 11px; cursor: pointer; white-space: nowrap; font-size: 12.5px; transition: background .15s, border-color .15s; }
+  .btn:hover { background: rgba(255,255,255,.12); border-color: rgba(140,160,220,.35); }
+  .btn.primary { background: linear-gradient(135deg, rgba(124,242,255,.22), rgba(197,139,255,.22)); border-color: rgba(124,242,255,.4); }
+  a.btn { color: var(--text); text-decoration: none; display: inline-block; }
+  .btn.on { background: rgba(124,242,255,.18); border-color: rgba(124,242,255,.5); }
+  .health { padding: 10px 16px 10px 10px; display: flex; gap: 12px; align-items: center; }
+  .ring { position: relative; width: 52px; height: 52px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .n { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 700; font-size: 17px; }
+  .health .w { font-weight: 600; }
+  .health .w small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+
+  /* left panel */
+  #left { position: fixed; left: 16px; top: 96px; bottom: 16px; width: 290px; padding: 14px; overflow: auto; z-index: 4; display: flex; flex-direction: column; gap: 16px; }
+  #left::-webkit-scrollbar, #inspector::-webkit-scrollbar { width: 6px; }
+  #left::-webkit-scrollbar-thumb, #inspector::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+  .sec h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  #search { width: 100%; padding: 9px 12px; border-radius: 10px; background: rgba(0,0,0,.28); border: 1px solid var(--line); color: var(--text); font: inherit; outline: none; }
+  #search:focus { border-color: rgba(124,242,255,.5); }
+  #results { margin-top: 6px; display: flex; flex-direction: column; gap: 2px; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; font-size: 13px; min-width: 0; }
+  .row:hover { background: rgba(255,255,255,.06); }
+  .row .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .row .meta { color: var(--dim); font-size: 11px; font-family: var(--mono); white-space: nowrap; }
+  .dot { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+  .disasters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .dz { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid transparent; cursor: pointer; font-size: 12.5px; }
+  .dz:hover, .dz.on { border-color: var(--line); background: rgba(255,255,255,.08); }
+  .dz .ic { font-size: 18px; }
+  .dz b { font-size: 15px; }
+  .dz.zero { opacity: .38; }
+  .dz small { display: block; color: var(--muted); font-size: 11px; line-height: 1.2; }
+  #dzlist { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+  .inc { padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,.22); cursor: pointer; font-size: 12.5px; }
+  .inc:hover { background: rgba(255,255,255,.07); }
+  .inc .f { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+  .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; font-size: 12.5px; color: var(--muted); }
+  .legend span { display: flex; gap: 7px; align-items: center; }
+  .road { width: 16px; height: 3px; border-radius: 2px; flex: none; }
+  .about { color: var(--muted); font-size: 12.5px; }
+  .foot { margin-top: auto; color: var(--dim); font-size: 11px; }
+  .foot a { color: var(--muted); }
+
+  /* inspector */
+  #inspector { position: fixed; right: 16px; top: 96px; bottom: 16px; width: 360px; padding: 16px; overflow: auto; z-index: 4; transform: translateX(calc(100% + 24px)); transition: transform .28s cubic-bezier(.2,.8,.2,1); }
+  #inspector.open { transform: none; }
+  .crumb { font-family: var(--mono); font-size: 11.5px; color: var(--muted); word-break: break-all; }
+  .title { display: flex; align-items: center; gap: 10px; margin: 6px 0 4px; }
+  .title h2 { margin: 0; font-size: 20px; word-break: break-word; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+  .chip { font-size: 11.5px; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .chip.role { color: #0a0f20; font-weight: 600; border: none; }
+  .summary { background: linear-gradient(135deg, rgba(124,242,255,.08), rgba(197,139,255,.08)); border: 1px solid rgba(124,242,255,.18); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; margin-bottom: 12px; }
+  .summary.missing { color: var(--muted); font-style: italic; background: rgba(255,255,255,.03); border-color: var(--line); }
+  .summary .stale { display: block; font-size: 11px; color: var(--warn); margin-top: 4px; font-style: normal; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .block { margin-bottom: 14px; }
+  .block h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .link { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .link:hover { background: rgba(255,255,255,.06); }
+  .link .k { font-size: 10.5px; font-family: var(--mono); padding: 1px 6px; border-radius: 5px; background: rgba(255,255,255,.08); color: var(--muted); flex: none; }
+  .link .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .link .sub { color: var(--dim); font-size: 11px; font-family: var(--mono); white-space: nowrap; }
+  .kv { font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 3px 8px; }
+  .kv b { color: var(--text); font-weight: 500; }
+  .floors { display: flex; flex-direction: column-reverse; gap: 3px; }
+  .floor { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,.035); cursor: pointer; font-size: 13px; border-left: 3px solid transparent; }
+  .floor:hover { background: rgba(255,255,255,.08); }
+  .floor.sel { border-left-color: var(--accent); background: rgba(124,242,255,.1); }
+  .steps { counter-reset: s; display: flex; flex-direction: column; gap: 3px; }
+  .step { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,.035); cursor: pointer; font-size: 12.5px; }
+  .step:hover { background: rgba(255,255,255,.08); }
+  .step .d { font-family: var(--mono); font-size: 10.5px; color: #0a0f20; background: var(--accent); border-radius: 5px; padding: 1px 5px; flex: none; }
+  .step.rev .d { background: #ff9f1c; }
+  .warnbox { border-radius: 10px; padding: 8px 10px; font-size: 12.5px; margin-bottom: 6px; background: rgba(255,90,31,.1); border: 1px solid rgba(255,90,31,.3); }
+  .close { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); background: rgba(255,255,255,.04); cursor: pointer; }
+
+  /* 3D labels */
+  .lbl-district { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: rgba(200,212,255,.6); text-transform: uppercase; white-space: nowrap; text-shadow: 0 1px 6px #000; }
+  .lbl-building { font-size: 11.5px; padding: 2px 7px; border-radius: 6px; background: rgba(8,12,28,.75); border: 1px solid var(--line); white-space: nowrap; color: var(--text); }
+  .lbl-ext { font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: rgba(8,12,28,.8); border: 1px solid rgba(255,255,255,.18); white-space: nowrap; }
+  .lbl-ext small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+  .badge { pointer-events: auto; cursor: pointer; }
+  .badge > span { display: inline-block; font-size: 17px; padding: 2px 6px; border-radius: 10px; background: rgba(8,12,28,.7); border: 1px solid rgba(255,255,255,.15); white-space: nowrap; animation: bob 2.2s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-4px); } }
+
+  #tooltip { position: fixed; pointer-events: none; z-index: 10; padding: 7px 10px; border-radius: 10px; font-size: 12.5px; background: rgba(8,12,28,.92); border: 1px solid var(--line); display: none; max-width: 340px; }
+  #tooltip .p { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  #toolbar { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); padding: 6px; display: flex; gap: 6px; z-index: 5; align-items: center; }
+  #toolbar .hint { color: var(--dim); font-size: 12px; padding: 0 8px; }
+  #toast { position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%) translateY(20px); opacity: 0; transition: all .3s; padding: 10px 16px; z-index: 6; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateX(-50%); }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; z-index: 20; color: var(--muted); letter-spacing: .2em; font-size: 12px; text-transform: uppercase; transition: opacity .6s; }
+  #fail { display: none; position: fixed; inset: 0; place-items: center; z-index: 30; text-align: center; padding: 24px; }
+  .menu-btn { display: none; }
+
+  @media (max-width: 900px) {
+    #left { display: none; width: auto; right: 16px; top: 84px; bottom: auto; max-height: 60vh; }
+    #left.open { display: flex; }
+    .menu-btn { display: inline-block; }
+    #inspector { left: 16px; right: 16px; width: auto; top: auto; height: 55vh; }
+    .health .w small, .brand .sub { display: none; }
+    #impact { display: none !important; }
+    #toolbar .hint { display: none; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="scene"></div>
+<div id="labels"></div>
+<div id="loading">building your city…</div>
+<div id="fail" class="glass"><div><h2>Couldn't start the 3D view</h2><p class="about">Vibe City loads three.js from a CDN and needs WebGL. Check your connection and try a recent Chrome, Edge, Firefox or Safari.</p></div></div>
+
+<header>
+  <div class="brand glass">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="#0a0f20"><path d="M3 21V11l4-2v12H3zm5 0V6l5-3v18H8zm6 0V9l4 2v10h-4zm5 0v-8l2 1v7h-2z"/></svg></div>
+    <div><h1>VIBE CITY</h1><div class="sub" id="sub"></div></div>
+    <button class="btn menu-btn" id="menuBtn" aria-label="Toggle city guide">☰</button>
+  </div>
+  <div class="spacer"></div>
+  <div id="impact" class="glass">
+    <div class="bolt">⚡</div>
+    <div class="t" id="impactText"></div>
+    <button class="btn primary" id="impactBtn">Show blast radius</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="health glass" id="health"></div>
+</header>
+
+<aside id="left" class="glass">
+  <div class="sec">
+    <input id="search" placeholder="Find a file or function…" autocomplete="off" spellcheck="false">
+    <div id="results"></div>
+  </div>
+  <div class="sec" id="aboutSec" style="display:none"><h3>What this app does</h3><div class="about" id="about"></div></div>
+  <div class="sec"><h3>Disaster report</h3><div class="disasters" id="disasters"></div><div id="dzlist"></div></div>
+  <div class="sec"><h3>Layers</h3><div class="toggles" id="toggles"></div></div>
+  <div class="sec"><h3>Buildings</h3><div class="legend" id="legendRoles"></div></div>
+  <div class="sec"><h3>Roads</h3><div class="legend" id="legendRoads"></div></div>
+  <div class="foot" id="foot"></div>
+</aside>
+
+<aside id="inspector" class="glass"></aside>
+<div id="tooltip"></div>
+<div id="toast" class="glass"></div>
+<div id="toolbar" class="glass">
+  <button class="btn" id="resetBtn" title="Reset camera">⟲ Overview</button>
+  <button class="btn" id="spinBtn" title="Slowly orbit the city">◎ Orbit</button>
+  <span class="hint">drag to orbit · right-drag to pan · scroll to zoom · click a floor</span>
+</div>
+
+<script>window.VIBECITY = /*__VIBECITY_DATA__*/null;</script>
+<script>
+  // if the module never boots (offline / no WebGL) show a friendly message
+  window.__vcBootTimer = setTimeout(function () {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('fail').style.display = 'grid';
+  }, 15000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+clearTimeout(window.__vcBootTimer);
+
+// ------------------------------------------------------------------ constants
+const ROLE = {
+  ui:     { color: '#4cc9f0', label: 'Screens & UI' },
+  api:    { color: '#57e389', label: 'API & server' },
+  data:   { color: '#ffb347', label: 'Data & storage' },
+  logic:  { color: '#b892ff', label: 'Logic & hooks' },
+  config: { color: '#7f8ea3', label: 'Config' },
+  test:   { color: '#ff7eb6', label: 'Tests' },
+};
+const ROAD = {
+  fetch:   { color: '#57e389', label: 'Network request' },
+  service: { color: '#ffd166', label: 'External service' },
+  render:  { color: '#4cc9f0', label: 'Renders' },
+  call:    { color: '#dfe6ff', label: 'Calls' },
+  use:     { color: '#b892ff', label: 'Uses' },
+  import:  { color: '#58648f', label: 'Imports' },
+};
+const ROAD_PRIO = ['import', 'use', 'call', 'render', 'service', 'fetch'];
+const DISASTER = {
+  fire:         { icon: '🔥', label: 'Fires', what: 'Errors — broken code' },
+  toxic:        { icon: '☣️', label: 'Toxic leaks', what: 'Secrets exposed' },
+  broken:       { icon: '🌉', label: 'Broken bridges', what: 'Imports to nowhere' },
+  gridlock:     { icon: '🚦', label: 'Gridlock', what: 'Circular imports' },
+  ghost:        { icon: '👻', label: 'Ghost buildings', what: 'Unused code' },
+  construction: { icon: '🚧', label: 'Construction', what: 'TODO / FIXME' },
+};
+const EXT_KIND = {
+  payments: { color: '#ffd166', icon: '💳' }, database: { color: '#ffb347', icon: '🗄️' },
+  ai: { color: '#ff7eb6', icon: '✨' }, email: { color: '#7dd3fc', icon: '✉️' },
+  auth: { color: '#a78bfa', icon: '🔐' }, messaging: { color: '#7dd3fc', icon: '💬' },
+  storage: { color: '#fbbf24', icon: '📦' }, cloud: { color: '#fb923c', icon: '☁️' },
+  analytics: { color: '#94a3b8', icon: '📈' }, monitoring: { color: '#94a3b8', icon: '🩺' },
+  realtime: { color: '#5eead4', icon: '📡' }, web: { color: '#94a3b8', icon: '🌐' },
+};
+const KIND_ICON = { component: '◧', function: 'ƒ', hook: '↻', route: '⇄', class: '◆', value: '•', more: '…' };
+
+// ------------------------------------------------------------------ state
+let DATA = window.VIBECITY;
+const S = {
+  layers: { roads: true, traffic: true, disasters: true, labels: false, impact: true },
+  buildings: new Map(), floors: new Map(), externals: new Map(), arcs: [], arcIndex: new Map(),
+  out: new Map(), inc: new Map(), incidentsByFile: new Map(),
+  selected: null, focus: null, flash: new Map(), reverse: null, trace: null,
+  effects: [], pulses: [], spin: false, cityRadius: 40, intro: null, tween: null, lastAmbient: 0,
+};
+
+// ------------------------------------------------------------------ three setup
+const container = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+container.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer({ element: document.getElementById('labels') });
+labelRenderer.setSize(innerWidth, innerHeight);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0f26, 0.0055);
+const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.1, 3000);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI * 0.47;
+controls.minDistance = 6;
+controls.screenSpacePanning = false;
+
+scene.add(new THREE.HemisphereLight(0x9fb8ff, 0x0b1020, 1.1));
+const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+sun.position.set(60, 120, 40);
+scene.add(sun);
+const rim = new THREE.DirectionalLight(0xc58bff, 0.6);
+rim.position.set(-80, 40, -60);
+scene.add(rim);
+
+const clock = new THREE.Clock();
+const world = new THREE.Group();
+scene.add(world);
+
+// stars
+(function stars() {
+  const n = 900, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const r = 700 + Math.random() * 300, th = Math.random() * Math.PI * 2, ph = Math.random() * Math.PI * 0.45;
+    pos[i * 3] = r * Math.sin(ph) * Math.cos(th); pos[i * 3 + 1] = r * Math.cos(ph) + 40; pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const m = new THREE.PointsMaterial({ color: 0xbfd0ff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: .7, fog: false });
+  scene.add(new THREE.Points(g, m));
+})();
+
+// ------------------------------------------------------------------ textures
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const windowTex = canvasTex(128, 64, (g, w, h) => {
+  g.fillStyle = '#05070f'; g.fillRect(0, 0, w, h);
+  const cols = 6, rows = 2, pw = w / cols, ph = h / rows;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const on = Math.random() < 0.62, b = 0.55 + Math.random() * 0.45;
+    g.fillStyle = on ? `rgba(255,${Math.round(205 + 40 * b)},${Math.round(150 + 80 * b)},${b})` : 'rgba(60,72,110,.35)';
+    g.fillRect(c * pw + pw * 0.22, r * ph + ph * 0.25, pw * 0.56, ph * 0.5);
+  }
+});
+const glowTex = canvasTex(64, 64, (g, w) => {
+  const gr = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,.65)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, w);
+});
+
+// ------------------------------------------------------------------ helpers
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const bidOf = (id) => id.startsWith('ext:') ? id : id.split('#')[0];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = (t) => 1 - Math.pow(1 - t, 3);
+const easeBack = (t) => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+const col = (c) => new THREE.Color(c);
+function nodeName(id) {
+  if (id.startsWith('ext:')) return S.externals.get(id)?.data.label || id.slice(4);
+  const f = S.floors.get(id); if (f) return f.data.name;
+  const b = S.buildings.get(id); return b ? b.data.name : id.split('#').pop();
+}
+function nodeColor(id) {
+  if (id.startsWith('ext:')) return (EXT_KIND[S.externals.get(id)?.data.kind] || EXT_KIND.web).color;
+  const b = S.buildings.get(bidOf(id)); return b ? ROLE[b.data.role]?.color || '#999' : '#999';
+}
+function toast(html, ms = 2600) {
+  const t = $('toast'); t.innerHTML = html; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+function label(html, cls) { const el = document.createElement('div'); el.className = cls; el.innerHTML = html; return new CSS2DObject(el); }
+function dispose(obj) {
+  obj.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => m.dispose());
+  });
+}
+
+// ------------------------------------------------------------------ layout
+function footprint(b) { return 2.3 + Math.min(2.4, Math.sqrt(Math.max(1, b.floors.length)) * 0.62); }
+function floorHeight(loc) { return clamp(0.8 + Math.log2(1 + loc) * 0.5, 1.1, 4.2); }
+
+function layout(buildings) {
+  const groups = new Map();
+  for (const b of buildings) { const k = b.district || b.dir; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(b); }
+  const roleOrder = { api: 0, data: 1, logic: 2, ui: 3, config: 4, test: 5 };
+  const districts = [];
+  const CELL = 6.4, PAD = 2.2;
+  for (const [dir, list] of groups) {
+    list.sort((a, b) => (roleOrder[a.role] - roleOrder[b.role]) || (b.loc - a.loc));
+    const cols = Math.ceil(Math.sqrt(list.length * 1.4));
+    const rows = Math.ceil(list.length / cols);
+    districts.push({ dir, list, cols, rows, w: cols * CELL + PAD * 2, d: rows * CELL + PAD * 2 + 1.5 });
+  }
+  districts.sort((a, b) => b.w * b.d - a.w * a.d || a.dir.localeCompare(b.dir));
+  const total = districts.reduce((s, d) => s + (d.w + 4) * (d.d + 4), 0);
+  const maxW = Math.max(Math.sqrt(total) * 1.35, ...districts.map((d) => d.w));
+  let x = 0, z = 0, rowH = 0; const GAP = 4.5;
+  for (const d of districts) {
+    if (x > 0 && x + d.w > maxW) { x = 0; z += rowH + GAP; rowH = 0; }
+    d.x = x; d.z = z; x += d.w + GAP; rowH = Math.max(rowH, d.d);
+  }
+  const W = Math.max(...districts.map((d) => d.x + d.w)), D = Math.max(...districts.map((d) => d.z + d.d));
+  const pos = new Map();
+  for (const d of districts) {
+    d.x -= W / 2; d.z -= D / 2;
+    d.list.forEach((b, i) => {
+      const c = i % d.cols, r = Math.floor(i / d.cols);
+      pos.set(b.id, { x: d.x + PAD + CELL * (c + 0.5), z: d.z + PAD + 1.5 + CELL * (r + 0.5) });
+    });
+  }
+  return { districts, pos, radius: Math.max(20, Math.hypot(W, D) / 2) };
+}
+
+// ------------------------------------------------------------------ build city
+function buildCity(data, opts = {}) {
+  const prevHashes = new Map([...S.buildings].map(([id, b]) => [id, b.data.hash]));
+  const keepSelection = S.selected;
+  if (S.city) { world.remove(S.city); dispose(S.city); }
+  S.buildings.clear(); S.floors.clear(); S.externals.clear(); S.arcs = []; S.arcIndex.clear();
+  S.effects = []; S.pulses.forEach((p) => p.sprite.visible = false); S.pulses = [];
+  S.out.clear(); S.inc.clear(); S.incidentsByFile.clear();
+  S.focus = null; S.reverse = null; S.trace = null;
+
+  const city = new THREE.Group(); S.city = city; world.add(city);
+  const gfx = { districts: new THREE.Group(), buildings: new THREE.Group(), roads: new THREE.Group(), fx: new THREE.Group(), badges: new THREE.Group(), labels: new THREE.Group() };
+  Object.values(gfx).forEach((g) => city.add(g));
+  S.gfx = gfx;
+
+  for (const e of data.edges) {
+    if (!S.out.has(e.from)) S.out.set(e.from, []); S.out.get(e.from).push(e);
+    if (!S.inc.has(e.to)) S.inc.set(e.to, []); S.inc.get(e.to).push(e);
+  }
+  for (const i of data.incidents) {
+    if (!S.incidentsByFile.has(i.file)) S.incidentsByFile.set(i.file, []); S.incidentsByFile.get(i.file).push(i);
+  }
+
+  const L = layout(data.buildings);
+  S.cityRadius = L.radius;
+
+  // ground
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(L.radius * 3 + 60, 96), new THREE.MeshStandardMaterial({ color: 0x0a1024, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; gfx.districts.add(ground);
+  const grid = new THREE.GridHelper(L.radius * 5 + 100, Math.round((L.radius * 5 + 100) / 4), 0x1c2752, 0x141c3d);
+  grid.material.transparent = true; grid.material.opacity = 0.35; gfx.districts.add(grid);
+
+  for (const d of L.districts) {
+    const plat = new THREE.Mesh(new THREE.BoxGeometry(d.w, 0.24, d.d), new THREE.MeshStandardMaterial({ color: 0x131b3a, roughness: .9, metalness: .1 }));
+    plat.position.set(d.x + d.w / 2, 0.12, d.z + d.d / 2); gfx.districts.add(plat);
+    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(plat.geometry), new THREE.LineBasicMaterial({ color: 0x3b4a8a, transparent: true, opacity: .55 }));
+    edge.position.copy(plat.position); gfx.districts.add(edge);
+    const name = d.dir === '.' ? '/ (root)' : d.dir;
+    const l = label(esc(name), 'lbl-district'); l.position.set(d.x + 1.2, 0.3, d.z + d.d - 0.8); l.center.set(0, 0.5); gfx.labels.add(l);
+  }
+
+  const impact = data.impact || { changedFloors: [], blast: {}, changedFiles: [] };
+  const changed = new Set(impact.changedFloors), blast = impact.blast || {};
+
+  for (const b of data.buildings) {
+    const p = L.pos.get(b.id); const f = footprint(b);
+    const group = new THREE.Group(); group.position.set(p.x, 0.24, p.z); gfx.buildings.add(group);
+    const color = col(ROLE[b.role]?.color || '#999');
+    const floors = b.floors.length ? b.floors : [{ id: b.id + '#', name: b.name, kind: 'value', loc: Math.max(1, b.loc), _pseudo: true }];
+    let y = 0; const items = [];
+    const incs = S.incidentsByFile.get(b.id) || [];
+    const isGhost = incs.some((i) => i.type === 'ghost');
+    floors.forEach((fl, idx) => {
+      const h = fl._pseudo ? clamp(0.6 + Math.log2(1 + fl.loc) * 0.35, 0.8, 2.6) : floorHeight(fl.loc);
+      const shade = fl.exported || fl._pseudo ? 1 : 0.78;
+      const base = color.clone().multiplyScalar(shade);
+      const side = new THREE.MeshStandardMaterial({ color: base, roughness: .55, metalness: .15, emissive: 0xffffff, emissiveMap: windowTex, emissiveIntensity: .55, transparent: true });
+      const roof = new THREE.MeshStandardMaterial({ color: base.clone().lerp(new THREE.Color('#ffffff'), .12), roughness: .4, metalness: .2, emissive: color, emissiveIntensity: .12, transparent: true });
+      const inset = idx % 2 ? 0.0 : 0.12; // alternating setbacks read as separate floors
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(f - inset, h - 0.1, f - inset), [side, side, roof, roof, side, side]);
+      mesh.position.y = y + h / 2;
+      group.add(mesh);
+      const rec = { data: fl, building: b.id, mesh, side, roof, y0: y, h, baseColor: base, pseudo: !!fl._pseudo };
+      mesh.userData = { kind: 'floor', id: fl._pseudo ? b.id : fl.id, building: b.id };
+      if (!fl._pseudo) S.floors.set(fl.id, rec);
+      items.push(rec);
+      y += h;
+    });
+    const top = y;
+    const outline = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(f + .25, top + .2, f + .25)), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .9 }));
+    outline.position.y = top / 2; outline.visible = false; group.add(outline);
+
+    if (b.floors.some((fl) => fl.kind === 'route')) { // API antenna
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(.06, .1, 2.2), new THREE.MeshStandardMaterial({ color: 0xcfd8ff, metalness: .6 }));
+      mast.position.y = top + 1.1; group.add(mast);
+      const tip = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: ROLE.api.color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+      tip.scale.set(1.1, 1.1, 1); tip.position.y = top + 2.25; group.add(tip);
+      S.effects.push({ update: (t) => { tip.material.opacity = .55 + .45 * Math.sin(t * 3 + p.x); } });
+    }
+    if (b.entry && !b.floors.some((fl) => fl.kind === 'route')) { // front door glow for entry points
+      const pad = new THREE.Mesh(new THREE.PlaneGeometry(f * .7, .5), new THREE.MeshBasicMaterial({ color: ROLE[b.role]?.color || '#fff', transparent: true, opacity: .85 }));
+      pad.position.set(0, .26, f / 2 + .01); group.add(pad);
+    }
+
+    const nameLbl = label(esc(b.name), 'lbl-building'); nameLbl.position.set(0, top + 0.9, 0); nameLbl.visible = S.layers.labels; group.add(nameLbl);
+    const rec = { data: b, group, items, top, foot: f, outline, nameLbl, pos: p, ghost: isGhost, incs, rise: 1, bornAt: 0 };
+    S.buildings.set(b.id, rec);
+    const now = clock.elapsedTime;
+    if (opts.intro) { rec.rise = 0; rec.riseAt = now + .3 + Math.hypot(p.x, p.z) / L.radius * 1.2 + Math.random() * 0.25; }
+    else if (opts.animateNew && !prevHashes.has(b.id)) { rec.rise = 0; rec.riseAt = now + .05; }
+    else if (opts.animateNew && prevHashes.get(b.id) !== b.hash) { S.flash.set(b.id, performance.now() / 1000 + 1.4); }
+  }
+
+  // externals: landmarks on a ring around the city
+  const R = L.radius + 8;
+  data.externals.forEach((e, i) => {
+    // services sit on the far horizon (opposite the default camera) so they never block the city
+    const n = data.externals.length, spread = Math.min(Math.PI * 1.1, 0.5 * n);
+    const a = -2.18 + (n > 1 ? (i / (n - 1) - .5) * spread : 0);
+    const p = { x: Math.cos(a) * R, z: Math.sin(a) * R };
+    const k = EXT_KIND[e.kind] || EXT_KIND.web; const c = col(k.color);
+    const g = new THREE.Group(); g.position.set(p.x, 0, p.z); gfx.buildings.add(g);
+    const H = 7 + Math.min(5, e.users * 1.2);
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(.8, 1.4, H, 6), new THREE.MeshStandardMaterial({ color: c.clone().multiplyScalar(.55), emissive: c, emissiveIntensity: .25, roughness: .4, metalness: .5, transparent: true }));
+    tower.position.y = H / 2; g.add(tower);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.8, .1, 8, 48), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: .8 }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = H * .7; g.add(ring);
+    const beacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: c, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    beacon.scale.set(3, 3, 1); beacon.position.y = H + .8; g.add(beacon);
+    const lb = label(`${k.icon} ${esc(e.label)}${e.tables?.length ? `<small>${e.tables.length} table${e.tables.length > 1 ? 's' : ''}</small>` : ''}`, 'lbl-ext');
+    lb.position.set(0, H + 2.6, 0); g.add(lb);
+    tower.userData = { kind: 'ext', id: e.id };
+    S.externals.set(e.id, { data: e, group: g, tower, top: H * .72, pos: p, items: [{ side: tower.material, roof: tower.material, mesh: tower }], rise: 1 });
+    S.effects.push({ update: (t) => { ring.rotation.z = t * .6; ring.position.y = H * .7 + Math.sin(t * 1.5 + i) * .4; beacon.material.opacity = .6 + .4 * Math.sin(t * 2 + i); } });
+  });
+
+  // roads: aggregate symbol edges between buildings, then plain imports
+  const agg = new Map();
+  for (const e of data.edges) {
+    const a = bidOf(e.from), b = bidOf(e.to); if (a === b) continue;
+    const key = a + '→' + b;
+    if (!agg.has(key)) agg.set(key, { from: a, to: b, edges: [], type: 'import' });
+    const r = agg.get(key); r.edges.push(e);
+    if (ROAD_PRIO.indexOf(e.type) > ROAD_PRIO.indexOf(r.type)) r.type = e.type;
+  }
+  for (const im of data.imports || []) {
+    const key = im.from + '→' + im.to;
+    if (!agg.has(key) && !agg.has(im.to + '→' + im.from)) agg.set(key, { from: im.from, to: im.to, edges: [], type: 'import' });
+  }
+  for (const r of agg.values()) addArc(r);
+
+  // disasters
+  const gridlockFiles = new Set(data.incidents.filter((i) => i.type === 'gridlock').map((i) => i.file));
+  for (const [file, incs] of S.incidentsByFile) {
+    const b = S.buildings.get(file); if (!b) continue;
+    const types = [...new Set(incs.map((i) => i.type))];
+    if (types.includes('fire')) { addParticles(b, '#ff6a1f', 90, 3.4, 'fire'); addParticles(b, '#ffd166', 40, 4.2, 'fire'); }
+    if (types.includes('toxic')) addParticles(b, '#7dff6b', 50, 1.4, 'toxic');
+    if (types.includes('construction')) addConstruction(b);
+    if (types.includes('broken')) incs.filter((i) => i.type === 'broken').slice(0, 3).forEach((i, k) => addBrokenBridge(b, k));
+    const order = ['fire', 'toxic', 'broken', 'gridlock', 'construction', 'ghost'];
+    const el = label('<span>' + order.filter((t) => types.includes(t)).map((t) => DISASTER[t].icon).join('') + '</span>', 'badge');
+    el.element.title = incs.map((i) => DISASTER[i.type]?.label + ': ' + i.message).join('\n');
+    el.element.addEventListener('click', (ev) => { ev.stopPropagation(); select(file, { fly: true }); });
+    el.position.set(b.pos.x, b.top + 0.24 + (S.layers.labels ? 2.2 : 1.4), b.pos.z); gfx.badges.add(el);
+    b.badge = el;
+  }
+  for (const r of S.arcs) {
+    if (gridlockFiles.has(r.from) && gridlockFiles.has(r.to)) r.gridlock = true;
+  }
+  // storms over changed buildings
+  const changedBuildings = new Set([...changed].map(bidOf));
+  for (const id of impact.changedFiles || []) changedBuildings.add(id);
+  for (const id of changedBuildings) { const b = S.buildings.get(id); if (b) addStorm(b); }
+  S.changed = changed; S.changedBuildings = changedBuildings; S.blast = blast;
+  S.blastBuildings = new Map();
+  for (const [id, d] of Object.entries(blast)) { const bid = bidOf(id); if (!changedBuildings.has(bid)) S.blastBuildings.set(bid, Math.min(S.blastBuildings.get(bid) ?? 99, d)); }
+  for (const [bid, d] of S.blastBuildings) { const b = S.buildings.get(bid); if (b) addShockwave(b, d); }
+
+  applyLayers();
+  updateHeader(data);
+  updateLeft(data);
+  if (keepSelection && (S.floors.has(keepSelection) || S.buildings.has(keepSelection) || S.externals.has(keepSelection))) select(keepSelection, { fly: false });
+  else closeInspector();
+}
+
+function anchor(id) {
+  const b = S.buildings.get(id); if (b) return new THREE.Vector3(b.pos.x, b.top + 0.3, b.pos.z);
+  const e = S.externals.get(id); if (e) return new THREE.Vector3(e.pos.x, e.top, e.pos.z);
+  return null;
+}
+function addArc(r) {
+  const a = anchor(r.from), b = anchor(r.to); if (!a || !b) return;
+  const dist = a.distanceTo(b);
+  const mid = a.clone().lerp(b, .5); mid.y = Math.max(a.y, b.y) + 1.5 + dist * 0.22;
+  const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+  const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(40));
+  const base = r.type === 'import' ? 0.07 : 0.22;
+  const mat = new THREE.LineBasicMaterial({ color: ROAD[r.type].color, transparent: true, opacity: base, blending: THREE.AdditiveBlending, depthWrite: false });
+  const line = new THREE.Line(geo, mat); S.gfx.roads.add(line);
+  const arc = { ...r, curve, line, mat, base };
+  S.arcs.push(arc); S.arcIndex.set(r.from + '→' + r.to, arc);
+}
+
+// ------------------------------------------------------------------ effects
+function addParticles(b, color, n, speed, kind) {
+  const pos = new Float32Array(n * 3), life = new Float32Array(n);
+  const spread = b.foot * .45;
+  const reset = (i, init) => {
+    pos[i * 3] = (Math.random() - .5) * spread * 2; pos[i * 3 + 2] = (Math.random() - .5) * spread * 2;
+    pos[i * 3 + 1] = b.top - Math.random() * (init ? b.top : 1); life[i] = Math.random();
+  };
+  for (let i = 0; i < n; i++) reset(i, true);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const m = new THREE.PointsMaterial({ color, map: glowTex, size: kind === 'fire' ? 2.2 : 1.6, transparent: true, opacity: .95, blending: THREE.AdditiveBlending, depthWrite: false });
+  const pts = new THREE.Points(g, m); pts.position.set(b.pos.x, .24, b.pos.z); pts.userData.layer = 'disasters'; S.gfx.fx.add(pts);
+  S.effects.push({
+    building: b.data.id, update: (t, dt) => {
+      for (let i = 0; i < n; i++) {
+        pos[i * 3 + 1] += dt * speed * (0.6 + life[i]);
+        pos[i * 3] += Math.sin(t * 3 + i) * dt * (kind === 'fire' ? .5 : .9);
+        if (pos[i * 3 + 1] > b.top + (kind === 'fire' ? 5 : 3.5)) reset(i, false);
+      }
+      g.attributes.position.needsUpdate = true;
+      m.size = (kind === 'fire' ? 2.2 : 1.6) + Math.sin(t * 9 + b.pos.x) * .3;
+    },
+  });
+}
+function addConstruction(b) {
+  const g = new THREE.Group(); g.position.set(b.pos.x, .24, b.pos.z); g.userData.layer = 'disasters'; S.gfx.fx.add(g);
+  const yellow = 0xffc93c;
+  const scaf = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(b.foot + .7, b.top + .6, b.foot + .7, 1, Math.max(1, Math.round(b.top / 1.5)), 1)), new THREE.LineBasicMaterial({ color: yellow, transparent: true, opacity: .5 }));
+  scaf.position.y = (b.top + .6) / 2; g.add(scaf);
+  const mh = b.top + 4; const mat = new THREE.MeshStandardMaterial({ color: yellow, emissive: yellow, emissiveIntensity: .25 });
+  const mast = new THREE.Mesh(new THREE.BoxGeometry(.28, mh, .28), mat); mast.position.set(b.foot / 2 + .7, mh / 2, b.foot / 2 + .7); g.add(mast);
+  const jib = new THREE.Group(); jib.position.set(b.foot / 2 + .7, mh, b.foot / 2 + .7); g.add(jib);
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(5.5, .22, .22), mat); arm.position.x = -1.8; jib.add(arm);
+  const cable = new THREE.Mesh(new THREE.BoxGeometry(.05, 1.6, .05), mat); cable.position.set(-3.8, -.8, 0); jib.add(cable);
+  S.effects.push({ update: (t) => { jib.rotation.y = Math.sin(t * .4 + b.pos.x) * 1.2; } });
+}
+function addBrokenBridge(b, k) {
+  const a = new THREE.Vector3(b.pos.x, b.top + .3, b.pos.z);
+  const ang = (k * 2.1) + b.pos.x;
+  const end = a.clone().add(new THREE.Vector3(Math.cos(ang) * 7, 3.2, Math.sin(ang) * 7));
+  const mid = a.clone().lerp(end, .5); mid.y += 2.5;
+  const curve = new THREE.QuadraticBezierCurve3(a, mid, end);
+  const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(24));
+  const line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: 0xff4d4d, dashSize: .5, gapSize: .3 }));
+  line.computeLineDistances(); line.userData.layer = 'disasters'; S.gfx.fx.add(line);
+  const x = new THREE.Mesh(new THREE.OctahedronGeometry(.45), new THREE.MeshBasicMaterial({ color: 0xff4d4d }));
+  x.position.copy(end); x.userData.layer = 'disasters'; S.gfx.fx.add(x);
+  S.effects.push({ update: (t) => { x.rotation.y = t * 2; x.position.y = end.y - .25 + Math.sin(t * 2.5 + k) * .3; } });
+}
+function addStorm(b) {
+  const g = new THREE.Group(); g.position.set(b.pos.x, b.top + 5.2, b.pos.z); g.userData.layer = 'impact'; S.gfx.fx.add(g);
+  const cloudMat = new THREE.MeshStandardMaterial({ color: 0x3b4566, emissive: 0x9fc4ff, emissiveIntensity: 0, roughness: 1, transparent: true, opacity: .92 });
+  [[0, 0, 0, 1.5], [1.4, -.2, .3, 1.1], [-1.3, -.15, -.2, 1.15], [.4, .5, -.6, 1.05], [-.5, .3, .8, 1]].forEach(([x, y, z, r]) => {
+    const s = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), cloudMat); s.position.set(x, y, z); g.add(s);
+  });
+  const boltMat = new THREE.LineBasicMaterial({ color: 0xe6f3ff, transparent: true, opacity: 1 });
+  let bolt = null, next = Math.random() * 2, until = 0;
+  S.effects.push({
+    storm: true, update: (t) => {
+      g.visible = S.layers.impact;
+      g.position.y = b.top + 5.2 + Math.sin(t * .9 + b.pos.z) * .3;
+      if (t > next) {
+        if (bolt) { g.remove(bolt); bolt.geometry.dispose(); }
+        const pts = []; let y = -.8, x = 0, z = 0; const bottom = -(5.2 - .3);
+        pts.push(new THREE.Vector3(0, y, 0));
+        while (y > bottom) { y -= .6 + Math.random() * .5; x += (Math.random() - .5) * .9; z += (Math.random() - .5) * .9; pts.push(new THREE.Vector3(x, Math.max(y, bottom), z)); }
+        bolt = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), boltMat); g.add(bolt);
+        until = t + .16; next = t + 1.2 + Math.random() * 2.2;
+      }
+      const on = t < until && S.layers.impact;
+      if (bolt) bolt.visible = on && ((t * 30) | 0) % 2 === 0;
+      cloudMat.emissiveIntensity = on ? 1.2 : 0;
+    },
+  });
+}
+function addShockwave(b, depth) {
+  const m = new THREE.MeshBasicMaterial({ color: 0xff9f1c, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(b.foot * .62, b.foot * .74, 48), m);
+  ring.rotation.x = -Math.PI / 2; ring.position.set(b.pos.x, .3, b.pos.z); ring.userData.layer = 'impact'; S.gfx.fx.add(ring);
+  S.effects.push({
+    update: (t) => {
+      const ph = ((t * .8 - depth * .35) % 1.6 + 1.6) % 1.6;
+      const k = ph / 1.6; ring.scale.setScalar(1 + k * 1.6);
+      m.opacity = S.layers.impact ? (1 - k) * (1 / (0.6 + depth * .4)) : 0;
+    },
+  });
+}
+
+// ------------------------------------------------------------------ pulses (traffic)
+const pulsePool = [];
+function spawnPulse(curve, color, { speed = .55, scale = 1, reverse = false } = {}) {
+  let p = pulsePool.find((q) => !q.active);
+  if (!p) {
+    if (pulsePool.length > 220) return;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    scene.add(sprite); p = { sprite }; pulsePool.push(p);
+  }
+  Object.assign(p, { active: true, curve, t: 0, speed, reverse });
+  p.sprite.material.color.set(color); p.sprite.scale.setScalar(scale); p.sprite.visible = true;
+  S.pulses.push(p);
+}
+function tickPulses(dt) {
+  for (const p of S.pulses) {
+    p.t += dt * p.speed;
+    if (p.t >= 1) { p.active = false; p.sprite.visible = false; continue; }
+    const pt = p.curve.getPoint(p.reverse ? 1 - p.t : p.t);
+    p.sprite.position.copy(pt);
+    p.sprite.material.opacity = Math.sin(p.t * Math.PI);
+  }
+  S.pulses = S.pulses.filter((p) => p.active);
+}
+
+// ------------------------------------------------------------------ per-frame shading
+const C_WHITE = new THREE.Color('#ffffff'), C_FIRE = new THREE.Color('#ff5a1f'), C_TOXIC = new THREE.Color('#6bff8a'),
+  C_STORM = new THREE.Color('#8fd3ff'), C_BLAST = new THREE.Color('#ff9f1c'), C_SEL = new THREE.Color('#bff8ff'), C_GHOST = new THREE.Color('#6b7280');
+function shade(t) {
+  const focus = S.focus;
+  for (const [bid, b] of S.buildings) {
+    const types = new Set(b.incs.map((i) => i.type));
+    const dimmed = focus && !focus.has(bid);
+    const flashUntil = S.flash.get(bid) || 0;
+    b.group.position.y = .24 + (b.ghost && S.layers.disasters ? .25 + Math.sin(t * 1.3 + b.pos.x) * .18 : 0);
+    if (b.rise < 1) b.group.scale.y = Math.max(.001, easeBack(clamp(b.rise, 0, 1)));
+    else b.group.scale.y = 1;
+    for (const it of b.items) {
+      const fid = it.pseudo ? null : it.data.id;
+      let c = C_WHITE, k = .55, rc = null, rk = .12;
+      const ff = fid && S.flash.get(fid);
+      if (ff && ff > t) { c = C_WHITE; k = 2.2; rc = C_WHITE; rk = 1.2; }
+      else if (flashUntil > t) { c = C_STORM; k = 1.6; rc = C_STORM; rk = .9; }
+      else if (S.selected && (fid === S.selected)) { c = C_SEL; k = 1.3 + Math.sin(t * 5) * .4; rc = C_SEL; rk = .9; }
+      else if (S.reverse && S.reverse.has(fid ?? bid)) { const d = S.reverse.get(fid ?? bid); c = C_BLAST; k = .6 + .7 * Math.max(0, Math.sin(t * 3 - d * .9)); rc = C_BLAST; rk = .5; }
+      else if (S.layers.disasters && types.has('fire')) { c = C_FIRE; k = .9 + .5 * Math.sin(t * 13 + it.y0 * 3) * Math.sin(t * 7.3); rc = C_FIRE; rk = .6; }
+      else if (S.layers.disasters && types.has('toxic')) { c = C_TOXIC; k = .7 + .3 * Math.sin(t * 2 + it.y0); rc = C_TOXIC; rk = .4; }
+      else if (S.layers.impact && fid && S.changed?.has(fid)) { c = C_STORM; k = 1.0 + .9 * Math.max(0, Math.sin(t * 4)); rc = C_STORM; rk = .8; }
+      else if (S.layers.impact && fid && S.blast?.[fid] != null) { const d = S.blast[fid]; c = C_BLAST; k = .5 + .6 * Math.max(0, Math.sin(t * 3 - d * .9)); rc = C_BLAST; rk = .35; }
+      it.side.emissive.copy(c); it.side.emissiveIntensity = k;
+      it.roof.emissive.copy(rc || it.baseColor); it.roof.emissiveIntensity = rk;
+      const ghost = b.ghost && S.layers.disasters && !(focus && focus.has(bid));
+      const op = dimmed ? .13 : (ghost ? .28 : 1);
+      it.side.opacity = it.roof.opacity = op;
+      it.side.color.copy(ghost ? C_GHOST : it.baseColor);
+      it.side.depthWrite = it.roof.depthWrite = op > .5;
+    }
+    b.outline.visible = S.selected && bidOf(S.selected) === bid;
+  }
+  for (const [id, e] of S.externals) {
+    e.tower.material.opacity = focus && !focus.has(id) ? .15 : 1;
+    e.group.visible = true;
+  }
+  for (const a of S.arcs) {
+    let op = S.layers.roads ? a.base : 0;
+    if (a.gridlock && S.layers.disasters) { op = .9; a.mat.color.set('#ff4d4d'); }
+    if (focus) op = (a.hot ? .95 : (S.layers.roads ? .03 : 0));
+    a.mat.opacity = op;
+  }
+}
+
+// ------------------------------------------------------------------ selection / inspector
+function edgesOf(id, dir) { // dir: 'out' | 'in'; id may be a floor, building or ext
+  const m = dir === 'out' ? S.out : S.inc;
+  if (S.floors.has(id) || id.startsWith('ext:')) return m.get(id) || [];
+  const b = S.buildings.get(id); if (!b) return [];
+  return b.data.floors.flatMap((f) => (m.get(f.id) || []).filter((e) => bidOf(dir === 'out' ? e.to : e.from) !== id));
+}
+function select(id, { fly = true } = {}) {
+  stopTrace();
+  S.selected = id; S.reverse = null;
+  const bid = bidOf(id);
+  const out = edgesOf(id, 'out'), inc = edgesOf(id, 'in');
+  const focus = new Set([bid]);
+  out.forEach((e) => focus.add(bidOf(e.to))); inc.forEach((e) => focus.add(bidOf(e.from)));
+  if (!S.floors.has(id) && S.buildings.has(id)) for (const im of DATA.imports || []) { if (im.from === id) focus.add(im.to); if (im.to === id) focus.add(im.from); }
+  S.focus = focus;
+  S.arcs.forEach((a) => { a.hot = (a.from === bid && focus.has(a.to)) || (a.to === bid && focus.has(a.from)); });
+  if (fly) flyTo(bid);
+  renderInspector(id);
+}
+function clearSelection() {
+  $('impactBtn').textContent = 'Show blast radius';
+  S.selected = null; S.focus = null; S.reverse = null; stopTrace();
+  S.arcs.forEach((a) => a.hot = false);
+  closeInspector();
+}
+function closeInspector() { $('inspector').classList.remove('open'); }
+
+function flyTo(bid) {
+  const b = S.buildings.get(bid) || S.externals.get(bid); if (!b) return;
+  const target = new THREE.Vector3(b.pos.x, (b.top || 4) * .5, b.pos.z);
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  const dist = clamp(18 + (b.top || 6) * 2.2, 18, 60);
+  tweenCamera(target, target.clone().add(dir.multiplyScalar(dist)), 900);
+}
+function tweenCamera(target, pos, ms) {
+  S.tween = { t0: performance.now(), ms, fromT: controls.target.clone(), toT: target, fromP: camera.position.clone(), toP: pos };
+}
+function overview(ms = 1200) {
+  const R = S.cityRadius + (DATA.externals.length ? 8 : 0);
+  tweenCamera(new THREE.Vector3(-R * .08, 2, -R * .12), new THREE.Vector3(R * 0.85, R * 0.9 + 14, R * 1.25 + 8), ms);
+}
+
+function linkRow(e, dir) {
+  const other = dir === 'out' ? e.to : e.from;
+  const verb = { call: 'calls', render: 'renders', fetch: 'request', service: 'service', use: 'uses', import: 'imports' }[e.type] || e.type;
+  const where = other.startsWith('ext:') ? 'external' : bidOf(other).split('/').slice(-2).join('/');
+  return `<div class="link" data-go="${esc(other)}"><span class="dot" style="background:${nodeColor(other)}"></span><span class="k">${verb}</span><span class="nm">${esc(e.label || nodeName(other))}</span><span class="sub">${esc(e.label ? nodeName(other) : where)}</span></div>`;
+}
+function triggerText(tr) {
+  if (tr.event === 'useEffect') return '⚙️ runs when the screen loads / data changes';
+  const ev = tr.event.replace(/^on/, '').replace(/([A-Z])/g, ' $1').trim().toLowerCase();
+  return `🖱️ on <b>${esc(ev)}</b>${tr.handlers.length ? ' → ' + tr.handlers.map(esc).join(', ') : ''}`;
+}
+function vscodeLink(file, line) { return `vscode://file/${encodeURI((DATA.meta.root + '/' + file).replace(/\\/g, '/'))}:${line || 1}`; }
+
+function renderInspector(id) {
+  const el = $('inspector'); el.classList.add('open');
+  const isExt = id.startsWith('ext:');
+  if (isExt) {
+    const e = S.externals.get(id).data; const k = EXT_KIND[e.kind] || EXT_KIND.web;
+    const users = (S.inc.get(id) || []);
+    el.innerHTML = `<button class="close" data-close>✕</button>
+      <div class="crumb">outside the city · ${esc(e.kind)}</div>
+      <div class="title"><span style="font-size:24px">${k.icon}</span><h2>${esc(e.label)}</h2></div>
+      <div class="summary">An external service your app talks to. Every glowing road into this tower is a place in your code that reaches out to ${esc(e.label)}.</div>
+      ${e.tables?.length ? `<div class="block"><h4>Tables touched</h4>${e.tables.map((t) => `<div class="kv">▤ <b>${esc(t)}</b></div>`).join('')}</div>` : ''}
+      <div class="block"><h4>Used by (${users.length})</h4>${users.map((u) => linkRow(u, 'in')).join('') || '<div class="kv">—</div>'}</div>`;
+    return wireInspector(el);
+  }
+  const bid = bidOf(id), b = S.buildings.get(bid), bd = b.data;
+  const fl = S.floors.get(id)?.data;
+  const incs = (S.incidentsByFile.get(bid) || []).filter((i) => !fl || !i.symbol || i.symbol === fl.name);
+  const out = edgesOf(id, 'out'), inc = edgesOf(id, 'in');
+  const role = ROLE[bd.role] || { color: '#999', label: bd.role };
+  const sum = fl ? fl.summary : bd.summary;
+  const changedHere = fl ? S.changed?.has(fl.id) : S.changedBuildings?.has(bid);
+  const blastHere = fl ? S.blast?.[fl.id] : S.blastBuildings?.get(bid);
+  let h = `<button class="close" data-close>✕</button>
+    <div class="crumb">${esc(bd.dir)}/${fl ? `<a href="#" data-go="${esc(bid)}" style="color:inherit">${esc(bd.name)}</a>` : ''}</div>
+    <div class="title"><span class="dot" style="background:${role.color};width:12px;height:12px"></span><h2>${esc(fl ? fl.name : bd.name)}</h2></div>
+    <div class="chips"><span class="chip role" style="background:${role.color}">${esc(role.label)}</span>
+      ${fl ? `<span class="chip">${KIND_ICON[fl.kind] || ''} ${esc(fl.kind)}</span><span class="chip">lines ${fl.line}–${fl.endLine}</span>${fl.exported ? '<span class="chip">exported</span>' : ''}`
+           : `<span class="chip">${bd.floors.length} floor${bd.floors.length === 1 ? '' : 's'}</span><span class="chip">${bd.loc} lines</span>${bd.entry ? '<span class="chip">entry point</span>' : ''}${bd.client ? '<span class="chip">runs in browser</span>' : ''}`}
+      ${fl?.route ? `<span class="chip" style="color:var(--api)">⇄ ${esc(fl.route)}</span>` : ''}
+      ${changedHere ? '<span class="chip" style="color:var(--storm)">⚡ changed</span>' : ''}
+      ${blastHere != null && !changedHere ? `<span class="chip" style="color:#ff9f1c">💥 ${blastHere} hop${blastHere > 1 ? 's' : ''} from a change</span>` : ''}
+    </div>
+    <div class="summary ${sum ? '' : 'missing'}">${sum ? esc(sum) : 'No plain-English summary yet — ask Claude to “explain my vibe city”.'}${bd.stale && sum ? '<span class="stale">⚠ code changed since this was written</span>' : ''}</div>
+    <div class="actions">
+      ${fl ? `<button class="btn primary" data-trace="${esc(id)}">▶ Trace what it triggers</button>` : ''}
+      <button class="btn" data-reverse="${esc(id)}">💥 What breaks if I change this?</button>
+      <a class="btn" href="${vscodeLink(bid, fl?.line)}" style="text-decoration:none">Open in VS Code</a>
+    </div>
+    <div id="traceOut"></div>`;
+  if (incs.length) h += `<div class="block"><h4>Disasters here</h4>${incs.map((i) => `<div class="warnbox">${DISASTER[i.type]?.icon || '⚠'} <b>${esc(DISASTER[i.type]?.label || i.type)}</b>${i.line ? ` · line ${i.line}` : ''}<br>${esc(i.message)}</div>`).join('')}</div>`;
+  if (fl?.triggers?.length) h += `<div class="block"><h4>Triggered by</h4>${fl.triggers.map((tr) => `<div class="kv">${triggerText(tr)} <span style="color:var(--dim)">L${tr.line}</span></div>`).join('')}</div>`;
+  if (inc.length) h += `<div class="block"><h4>${fl ? 'Who uses this' : 'Who comes here'} (${inc.length})</h4>${inc.map((e) => linkRow(e, 'in')).join('')}</div>`;
+  if (out.length) h += `<div class="block"><h4>What it triggers (${out.length})</h4>${out.map((e) => linkRow(e, 'out')).join('')}</div>`;
+  const fetches = fl ? fl.fetches : bd.floors.flatMap((f) => f.fetches || []);
+  const tables = fl ? fl.tables : [...new Set(bd.floors.flatMap((f) => f.tables || []))];
+  const env = fl ? fl.env : bd.env;
+  if (fetches?.length || tables?.length || env?.length) {
+    h += `<div class="block"><h4>Data flow</h4>`;
+    (fetches || []).forEach((f) => h += `<div class="kv">🌐 <b>${esc(f.method)}</b> ${esc(f.url.replace(/\$\{\}/g, '…'))}${f.target ? ` → <a href="#" data-go="${esc(f.target)}" style="color:var(--api)">${esc(nodeName(f.target))}</a>` : ' <span style="color:var(--dim)">(no matching route found)</span>'}</div>`);
+    (tables || []).forEach((t) => h += `<div class="kv">▤ reads/writes table <b>${esc(t)}</b></div>`);
+    (env || []).forEach((v) => h += `<div class="kv">🔑 env <b>${esc(v)}</b></div>`);
+    h += `</div>`;
+  }
+  if (!fl && bd.floors.length) h += `<div class="block"><h4>Floors (functions, bottom → top)</h4><div class="floors">${bd.floors.map((f) => `<div class="floor" data-go="${esc(f.id)}"><span class="k" style="font-family:var(--mono);color:var(--muted);width:14px">${KIND_ICON[f.kind] || '•'}</span><span class="nm" style="flex:1">${esc(f.name)}</span><span class="sub" style="color:var(--dim);font-family:var(--mono);font-size:11px">${f.loc}L</span></div>`).join('')}</div></div>`;
+  if (!inc.length && !out.length && !fl?.triggers?.length) h += `<div class="kv" style="padding:0">No roads in or out — this part stands alone.</div>`;
+  el.innerHTML = h;
+  wireInspector(el);
+}
+function wireInspector(el) {
+  el.querySelectorAll('[data-go]').forEach((n) => n.addEventListener('click', (ev) => { ev.preventDefault(); const id = n.dataset.go; if (S.floors.has(id) || S.buildings.has(id) || S.externals.has(id)) select(id); else if (S.buildings.has(bidOf(id))) select(bidOf(id)); }));
+  el.querySelector('[data-close]')?.addEventListener('click', clearSelection);
+  el.querySelector('[data-trace]')?.addEventListener('click', (ev) => startTrace(ev.currentTarget.dataset.trace));
+  el.querySelector('[data-reverse]')?.addEventListener('click', (ev) => showReverse(ev.currentTarget.dataset.reverse));
+}
+
+// ------------------------------------------------------------------ trace & reverse impact
+function bfs(start, dir, maxDepth = 8, maxNodes = 60) {
+  const seen = new Map([[start, 0]]), steps = [], q = [start];
+  const starts = S.floors.has(start) || start.startsWith('ext:') ? [start] : (S.buildings.get(start)?.data.floors.map((f) => f.id) || []);
+  starts.forEach((s) => seen.set(s, 0)); q.splice(0, 1, ...starts);
+  while (q.length && steps.length < maxNodes) {
+    const cur = q.shift(); const d = seen.get(cur);
+    if (d >= maxDepth) continue;
+    const list = (dir === 'out' ? S.out.get(cur) : S.inc.get(cur)) || [];
+    for (const e of list) {
+      const nxt = dir === 'out' ? e.to : e.from;
+      if (seen.has(nxt)) continue;
+      seen.set(nxt, d + 1); steps.push({ id: nxt, parent: cur, depth: d + 1, edge: e }); q.push(nxt);
+    }
+  }
+  return steps;
+}
+function startTrace(id) {
+  stopTrace();
+  const steps = bfs(id, 'out');
+  const fl = S.floors.get(id)?.data;
+  const focus = new Set([bidOf(id), ...steps.map((s) => bidOf(s.id))]);
+  S.focus = focus; S.reverse = null;
+  S.arcs.forEach((a) => a.hot = false);
+  for (const s of steps) { const a = S.arcIndex.get(bidOf(s.parent) + '→' + bidOf(s.id)); if (a) a.hot = true; }
+  const maxD = Math.max(0, ...steps.map((s) => s.depth));
+  S.trace = { id, steps, t0: performance.now() / 1000, period: (maxD + 2) * .75, fired: new Set() };
+  const trig = (fl?.triggers || []).filter((t) => t.event !== 'useEffect');
+  $('traceOut').innerHTML = `<div class="block"><h4>Flow — what happens next</h4><div class="steps">
+    <div class="step"><span class="d">0</span>${trig.length ? triggerText(trig[0]) + ' in ' : ''}<b>${esc(fl?.name || nodeName(id))}</b></div>
+    ${steps.map((s) => `<div class="step" data-go="${esc(s.id)}" style="margin-left:${Math.min(s.depth, 6) * 10}px"><span class="d">${s.depth}</span><span class="dot" style="background:${nodeColor(s.id)}"></span>${esc({ call: 'calls', render: 'renders', fetch: 'sends', service: 'talks to', use: 'uses' }[s.edge.type] || s.edge.type)} <b>${esc(s.edge.type === 'fetch' ? s.edge.label : nodeName(s.id))}</b>${s.edge.type === 'fetch' ? ` → ${esc(nodeName(s.id))}` : ''}</div>`).join('') || '<div class="kv">This doesn\'t trigger anything else.</div>'}
+  </div></div>`;
+  wireInspector($('traceOut'));
+  flyToGroup(focus);
+}
+function stopTrace() { S.trace = null; }
+function tickTrace(t) {
+  const tr = S.trace; if (!tr) return;
+  const local = (t - tr.t0) % tr.period, cycle = Math.floor((t - tr.t0) / tr.period);
+  for (const s of tr.steps) {
+    const key = cycle + ':' + s.id;
+    if (local >= s.depth * .75 - .6 && !tr.fired.has(key)) {
+      tr.fired.add(key);
+      const a = S.arcIndex.get(bidOf(s.parent) + '→' + bidOf(s.id));
+      if (a) spawnPulse(a.curve, ROAD[s.edge.type]?.color || '#fff', { speed: 1.7, scale: 1.8 });
+      setTimeout(() => S.flash.set(s.id, performance.now() / 1000 + .5), 520);
+    }
+  }
+  if (tr.fired.size > 2000) tr.fired.clear();
+}
+function showReverse(id) {
+  stopTrace();
+  const steps = bfs(id, 'in');
+  S.reverse = new Map(steps.map((s) => [s.id, s.depth]));
+  S.reverse.set(id, 0);
+  const focus = new Set([bidOf(id), ...steps.map((s) => bidOf(s.id))]);
+  S.focus = focus;
+  S.arcs.forEach((a) => a.hot = false);
+  for (const s of steps) { const a = S.arcIndex.get(bidOf(s.id) + '→' + bidOf(s.parent)); if (a) { a.hot = true; a.revPulse = true; } }
+  const files = new Set(steps.map((s) => bidOf(s.id)).filter((x) => !x.startsWith('ext:')));
+  $('traceOut').innerHTML = `<div class="block"><h4>💥 Blast radius if you change ${esc(nodeName(id))}</h4>
+    <div class="summary" style="background:rgba(255,159,28,.08);border-color:rgba(255,159,28,.3)">${steps.length ? `<b>${steps.length}</b> function${steps.length > 1 ? 's' : ''} in <b>${files.size}</b> file${files.size > 1 ? 's' : ''} depend on this. Test these after editing it.` : 'Nothing depends on this — safe to change.'}</div>
+    <div class="steps">${steps.map((s) => `<div class="step rev" data-go="${esc(s.id)}" style="margin-left:${Math.min(s.depth - 1, 6) * 10}px"><span class="d">${s.depth}</span><span class="dot" style="background:${nodeColor(s.id)}"></span><b>${esc(nodeName(s.id))}</b><span style="color:var(--dim);font-family:var(--mono);font-size:11px;margin-left:auto">${esc(bidOf(s.id).split('/').pop())}</span></div>`).join('')}</div></div>`;
+  wireInspector($('traceOut'));
+  flyToGroup(focus);
+}
+function flyToGroup(ids) {
+  const pts = [...ids].map((id) => S.buildings.get(id) || S.externals.get(id)).filter(Boolean);
+  if (!pts.length) return;
+  const c = new THREE.Vector3(); pts.forEach((p) => c.add(new THREE.Vector3(p.pos.x, 0, p.pos.z))); c.divideScalar(pts.length);
+  const r = Math.max(12, ...pts.map((p) => Math.hypot(p.pos.x - c.x, p.pos.z - c.z)));
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  tweenCamera(c.clone().setY(3), c.clone().setY(3).add(dir.multiplyScalar(r * 2.1 + 14)), 1000);
+}
+
+// ------------------------------------------------------------------ UI panels
+function updateHeader(d) {
+  const m = d.meta;
+  $('sub').innerHTML = `<b>${esc(m.name)}</b> · ${m.files} buildings · ${m.floors} floors · ${d.externals.length} services`;
+  const h = d.health, color = h.score >= 90 ? '#57e389' : h.score >= 75 ? '#ffd166' : h.score >= 50 ? '#ff9f1c' : '#ff5a5a';
+  const C = 2 * Math.PI * 22;
+  $('health').innerHTML = `<div class="ring"><svg width="52" height="52"><circle cx="26" cy="26" r="22" stroke="rgba(255,255,255,.1)" stroke-width="5" fill="none"/><circle cx="26" cy="26" r="22" stroke="${color}" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="${C * h.score / 100} ${C}" style="filter:drop-shadow(0 0 6px ${color})"/></svg><div class="n">${h.score}</div></div>
+    <div class="w">${h.icon} ${esc(h.weather)}<small>city health</small></div>`;
+  const imp = d.impact;
+  if (imp && imp.changedFiles?.length) {
+    const nb = new Set(Object.keys(imp.blast).map(bidOf)).size;
+    $('impactText').innerHTML = `<b>${imp.changedFloors.length} function${imp.changedFloors.length === 1 ? '' : 's'}</b> changed in ${imp.changedFiles.length} file${imp.changedFiles.length === 1 ? '' : 's'}<small>${Object.keys(imp.blast).length} downstream function${Object.keys(imp.blast).length === 1 ? '' : 's'} in ${nb} file${nb === 1 ? '' : 's'} feel the shockwave</small>`;
+    $('impact').style.display = 'flex';
+  } else $('impact').style.display = 'none';
+}
+let openDz = null;
+function updateLeft(d) {
+  const counts = d.health.counts || {};
+  $('disasters').innerHTML = Object.entries(DISASTER).map(([k, v]) => `<div class="dz ${counts[k] ? '' : 'zero'} ${openDz === k ? 'on' : ''}" data-dz="${k}"><span class="ic">${v.icon}</span><div><b>${counts[k] || 0}</b> ${esc(v.label)}<small>${esc(v.what)}</small></div></div>`).join('');
+  $('disasters').querySelectorAll('[data-dz]').forEach((n) => n.addEventListener('click', () => { openDz = openDz === n.dataset.dz ? null : n.dataset.dz; updateLeft(DATA); }));
+  const list = openDz ? d.incidents.filter((i) => i.type === openDz) : [];
+  $('dzlist').innerHTML = list.map((i, k) => `<div class="inc" data-file="${esc(i.file)}" data-sym="${esc(i.symbol || '')}"><div>${DISASTER[i.type].icon} ${esc(i.message)}</div><div class="f">${esc(i.file)}${i.line ? ':' + i.line : ''}</div></div>`).join('') || (openDz ? '<div class="about">None — nice.</div>' : '');
+  $('dzlist').querySelectorAll('.inc').forEach((n) => n.addEventListener('click', () => { const fid = n.dataset.file + '#' + n.dataset.sym; select(n.dataset.sym && S.floors.has(fid) ? fid : n.dataset.file); }));
+
+  const L = [['roads', 'Roads'], ['traffic', 'Traffic'], ['disasters', 'Disasters'], ['impact', 'Changes'], ['labels', 'Names']];
+  $('toggles').innerHTML = L.map(([k, l]) => `<button class="btn ${S.layers[k] ? 'on' : ''}" data-layer="${k}">${l}</button>`).join('');
+  $('toggles').querySelectorAll('[data-layer]').forEach((n) => n.addEventListener('click', () => { S.layers[n.dataset.layer] = !S.layers[n.dataset.layer]; applyLayers(); updateLeft(DATA); }));
+  $('legendRoles').innerHTML = Object.values(ROLE).map((r) => `<span><i class="dot" style="background:${r.color}"></i>${r.label}</span>`).join('');
+  $('legendRoads').innerHTML = Object.values(ROAD).map((r) => `<span><i class="road" style="background:${r.color}"></i>${r.label}</span>`).join('');
+  if (d.project?.summary) { $('aboutSec').style.display = ''; $('about').textContent = d.project.summary; } else $('aboutSec').style.display = 'none';
+  const when = new Date(d.meta.generatedAt);
+  $('foot').innerHTML = `Built ${when.toLocaleString()} · ${d.meta.summarized}/${d.meta.files} buildings explained · <a href="https://github.com/themanasarora/Vibe_City" target="_blank" rel="noopener">Vibe City</a> v${esc(d.version)}`;
+}
+function applyLayers() {
+  if (!S.gfx) return;
+  S.gfx.badges.visible = S.layers.disasters;
+  S.gfx.fx.children.forEach((o) => { o.visible = !!S.layers[o.userData.layer || 'disasters']; });
+  S.gfx.badges.children.forEach((b) => { b.visible = S.layers.disasters; b.element.style.display = S.layers.disasters ? '' : 'none'; });
+  for (const b of S.buildings.values()) {
+    b.nameLbl.visible = S.layers.labels; b.nameLbl.element.style.display = S.layers.labels ? '' : 'none';
+    if (b.badge) b.badge.position.y = b.top + .24 + (S.layers.labels ? 2.2 : 1.4);
+  }
+}
+
+// search
+$('search').addEventListener('input', () => {
+  const q = $('search').value.trim().toLowerCase();
+  if (!q) { $('results').innerHTML = ''; return; }
+  const hits = [];
+  for (const b of DATA.buildings) {
+    if (b.id.toLowerCase().includes(q)) hits.push({ id: b.id, name: b.name, meta: b.dir, color: ROLE[b.role]?.color });
+    for (const f of b.floors) if (f.name.toLowerCase().includes(q)) hits.push({ id: f.id, name: f.name, meta: b.name, color: ROLE[b.role]?.color });
+  }
+  for (const e of DATA.externals) if (e.label.toLowerCase().includes(q)) hits.push({ id: e.id, name: e.label, meta: 'service', color: (EXT_KIND[e.kind] || EXT_KIND.web).color });
+  $('results').innerHTML = hits.slice(0, 12).map((h) => `<div class="row" data-go="${esc(h.id)}"><span class="dot" style="background:${h.color}"></span><span class="nm">${esc(h.name)}</span><span class="meta">${esc(h.meta)}</span></div>`).join('') || '<div class="about" style="padding:6px 8px">No matches</div>';
+  $('results').querySelectorAll('[data-go]').forEach((n) => n.addEventListener('click', () => select(n.dataset.go)));
+});
+$('impactBtn').addEventListener('click', () => {
+  const ids = new Set([...S.changedBuildings, ...S.blastBuildings.keys()]);
+  if (S.focus && S.focus.__impact) { clearSelection(); $('impactBtn').textContent = 'Show blast radius'; return; }
+  S.selected = null; closeInspector(); S.layers.impact = true; applyLayers();
+  S.focus = ids; S.focus.__impact = true;
+  S.arcs.forEach((a) => { a.hot = ids.has(a.from) && ids.has(a.to); a.revPulse = true; });
+  flyToGroup(ids); $('impactBtn').textContent = 'Show whole city';
+});
+$('resetBtn').addEventListener('click', () => { clearSelection(); overview(); });
+$('spinBtn').addEventListener('click', () => { S.spin = !S.spin; controls.autoRotate = S.spin; controls.autoRotateSpeed = .6; $('spinBtn').classList.toggle('on', S.spin); });
+$('menuBtn').addEventListener('click', () => $('left').classList.toggle('open'));
+addEventListener('keydown', (e) => { if (e.key === 'Escape') clearSelection(); if (e.key === '/' && document.activeElement !== $('search')) { e.preventDefault(); $('search').focus(); } });
+
+// ------------------------------------------------------------------ picking
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+function pick(ev) {
+  const r = renderer.domElement.getBoundingClientRect();
+  mouse.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const hits = ray.intersectObjects(S.gfx ? S.gfx.buildings.children : [], true);
+  for (const h of hits) { let o = h.object; while (o && !o.userData.kind) o = o.parent; if (o) return o.userData; }
+  return null;
+}
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5) return;
+  const u = pick(e);
+  if (u) select(u.id); else clearSelection();
+});
+let hoverRaf = 0;
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (hoverRaf) return;
+  hoverRaf = requestAnimationFrame(() => {
+    hoverRaf = 0;
+    const u = pick(e), tip = $('tooltip');
+    if (!u) { tip.style.display = 'none'; renderer.domElement.style.cursor = ''; return; }
+    renderer.domElement.style.cursor = 'pointer';
+    let html;
+    if (u.kind === 'ext') { const x = S.externals.get(u.id).data; html = `<b>${esc(x.label)}</b><div class="p">external service · ${x.users} caller${x.users === 1 ? '' : 's'}</div>`; }
+    else {
+      const b = S.buildings.get(u.building).data, f = S.floors.get(u.id)?.data;
+      const inc = S.incidentsByFile.get(b.id) || [];
+      html = `<span class="dot" style="display:inline-block;background:${ROLE[b.role]?.color};margin-right:6px"></span><b>${esc(f ? f.name : b.name)}</b> ${f ? `<span style="color:var(--muted)">${esc(f.kind)}</span>` : ''}
+        ${(f?.summary || (!f && b.summary)) ? `<div style="margin-top:3px">${esc(f ? f.summary : b.summary)}</div>` : ''}
+        <div class="p">${esc(b.id)}${f ? ':' + f.line : ''}</div>${inc.length ? `<div style="margin-top:3px">${[...new Set(inc.map((i) => DISASTER[i.type]?.icon))].join(' ')}</div>` : ''}`;
+    }
+    tip.innerHTML = html; tip.style.display = 'block';
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - 350) + 'px'; tip.style.top = (e.clientY + 14) + 'px';
+  });
+});
+renderer.domElement.addEventListener('pointerleave', () => { $('tooltip').style.display = 'none'; });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); labelRenderer.setSize(innerWidth, innerHeight);
+});
+
+// ------------------------------------------------------------------ loop
+let ambientAcc = 0, viewShift = 0;
+function frame() {
+  requestAnimationFrame(frame);
+  const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime, now = performance.now() / 1000;
+  if (S.tween) {
+    const k = clamp((performance.now() - S.tween.t0) / S.tween.ms, 0, 1), e = ease(k);
+    controls.target.lerpVectors(S.tween.fromT, S.tween.toT, e);
+    camera.position.lerpVectors(S.tween.fromP, S.tween.toP, e);
+    if (k >= 1) S.tween = null;
+  }
+  for (const b of S.buildings.values()) if (b.rise < 1) b.rise = clamp((t - b.riseAt) / .9, 0, 1);
+  for (const fx of S.effects) fx.update(t, dt);
+  // remap flash timers (stored in performance seconds) into clock time
+  const flashNow = new Map(); for (const [k, v] of S.flash) { if (v > now) flashNow.set(k, t + (v - now)); else S.flash.delete(k); }
+  const saved = S.flash; S.flash = flashNow; shade(t); S.flash = saved;
+
+  ambientAcc += dt;
+  if (ambientAcc > .12) {
+    ambientAcc = 0;
+    const hot = S.arcs.filter((a) => a.hot);
+    if (S.focus && hot.length && !S.trace) {
+      const a = hot[(Math.random() * hot.length) | 0];
+      spawnPulse(a.curve, a.revPulse && S.reverse || S.focus.__impact ? '#ff9f1c' : ROAD[a.type].color, { speed: .8, scale: 1.4, reverse: !!(a.revPulse && (S.reverse || S.focus.__impact)) });
+    } else if (!S.focus && S.layers.traffic && S.layers.roads && S.arcs.length && S.pulses.length < 45) {
+      const pool = S.arcs.filter((a) => a.type !== 'import');
+      const a = pool[(Math.random() * pool.length) | 0];
+      if (a) spawnPulse(a.curve, a.gridlock && S.layers.disasters ? '#ff4d4d' : ROAD[a.type].color, { speed: a.gridlock ? .25 : .45 + Math.random() * .3, scale: .8 });
+    }
+  }
+  tickTrace(t);
+  tickPulses(dt);
+  const wantShift = innerWidth > 900 ? ((($('inspector').classList.contains('open') ? 392 : 0) - 322) / 2) : 0;
+  viewShift += (wantShift - viewShift) * Math.min(1, dt * 6);
+  if (Math.abs(viewShift) > .5) camera.setViewOffset(innerWidth, innerHeight, viewShift, 0, innerWidth, innerHeight); else camera.clearViewOffset();
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+
+// ------------------------------------------------------------------ boot
+function boot() {
+  if (!DATA) { $('loading').textContent = 'no city data — run vibecity.py build'; return; }
+  buildCity(DATA, { intro: true });
+  const R = S.cityRadius;
+  controls.maxDistance = R * 5 + 80;
+  camera.position.set(R * 2.2, R * 2.4 + 40, R * 2.6);
+  controls.target.set(0, 0, 0);
+  overview(2600);
+  $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 700);
+  frame();
+  if (location.protocol.startsWith('http')) live();
+  setTimeout(applyHash, 2700);
+}
+// deep links: #select=<id> · #trace=<id> · #breaks=<id> · #impact
+function applyHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  const find = (id) => S.floors.has(id) || S.buildings.has(id) || S.externals.has(id) ? id : null;
+  if (h.has('impact')) $('impactBtn').click();
+  const sel = find(h.get('select') || h.get('trace') || h.get('breaks') || '');
+  if (!sel) return;
+  select(sel);
+  if (h.has('trace')) startTrace(sel);
+  if (h.has('breaks')) showReverse(sel);
+}
+addEventListener('hashchange', applyHash);
+function live() {
+  let es;
+  try { es = new EventSource('events'); } catch { return; }
+  es.addEventListener('rebuild', async () => {
+    try {
+      const next = await (await fetch('graph.json?' + Date.now())).json();
+      const before = new Set(DATA.buildings.map((b) => b.id));
+      const added = next.buildings.filter((b) => !before.has(b.id)).length;
+      const prevScore = DATA.health.score;
+      DATA = next; buildCity(DATA, { animateNew: true });
+      const delta = next.health.score - prevScore;
+      toast(`🏗️ City rebuilt${added ? ` · ${added} new building${added > 1 ? 's' : ''}` : ''}${delta ? ` · health ${delta > 0 ? '+' : ''}${delta}` : ''}`);
+    } catch (e) { console.warn('[vibe-city] live reload failed', e); }
+  });
+}
+boot();
+</script>
+</body>
+</html>
